@@ -8,6 +8,9 @@ class MockKernel(BaseKernel):
     @property
     def parameters(self): return 10
     def execute(self, grid, **kwargs): return grid
+    def to_onnx_nodes(self, input_name, output_name, **kwargs):
+        from onnx import helper
+        return [helper.make_node('Identity', [input_name], [output_name])], []
 
 class TestRegistry(unittest.TestCase):
     def test_registration(self):

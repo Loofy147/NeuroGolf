@@ -1,5 +1,6 @@
 from registry.manager import registry
 from core.hashing import RelationalHasher
+from core.compiler import ONNXCompiler
 
 class CompositionalAssembly:
     def __init__(self, kernel_chain):
@@ -33,3 +34,24 @@ class MetaKernel:
                 assembly = CompositionalAssembly(kernel_chain)
                 return assembly.execute(input_grid)
         return None
+
+    def synthesize_onnx(self, task_id, example_input, example_output, output_path):
+        """
+        Translates a discovered kernel chain into a compliant ONNX file.
+        """
+        signature = self.hasher.compute_signature(example_input, example_output)
+        kernel_chain_names = self.knowledge_base.get(signature)
+
+        if not kernel_chain_names:
+            return None
+
+        # Convert names/params to actual kernel objects
+        kernel_chain = []
+        for name, params in kernel_chain_names:
+            kernel = registry.get_kernel(name)
+            if kernel:
+                kernel_chain.append((kernel, params))
+
+        compiler = ONNXCompiler(task_id)
+        model = compiler.compile(kernel_chain, output_path)
+        return model

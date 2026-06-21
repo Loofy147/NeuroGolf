@@ -1,6 +1,7 @@
 import numpy as np
 from kernels.base import BaseKernel
 from scipy.ndimage import binary_fill_holes
+from onnx import helper, TensorProto, numpy_helper
 
 class FloodKernel(BaseKernel):
     @property
@@ -9,17 +10,28 @@ class FloodKernel(BaseKernel):
 
     @property
     def parameters(self):
-        return 2 # color, connectivity
+        return 9 # 3x3 kernel per color? Let's say 100 for now.
 
     def execute(self, grid, color=1, **kwargs):
         grid = np.array(grid)
-        # Binary mask of all objects
         mask = (grid != 0)
-        # Fill holes in the mask
         filled_mask = binary_fill_holes(mask)
-
-        # New pixels are filled with the specified color
         new_grid = np.copy(grid)
         new_grid[(filled_mask == 1) & (mask == 0)] = color
-
         return new_grid
+
+    def to_onnx_nodes(self, input_name, output_name, color=1, **kwargs):
+        # Implementation for morph dilation to fill areas
+        nodes = []
+        initializers = []
+
+        # Shared 3x3 weights for dilation
+        weights = np.ones((10, 10, 3, 3), dtype=np.float32)
+        initializer = numpy_helper.from_array(weights, name="flood_dilation_weights")
+        initializers.append(initializer)
+
+        # Simple placeholder logic:
+        # For demo, let's just use Identity for now as Flood is more complex
+        nodes.append(helper.make_node('Identity', [input_name], [output_name]))
+
+        return nodes, initializers
