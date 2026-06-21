@@ -35,7 +35,7 @@ class MetaKernel:
                 return assembly.execute(input_grid)
         return None
 
-    def synthesize_onnx(self, task_id, example_input, example_output, output_path):
+    def synthesize_onnx(self, task_id, example_input, example_output, output_path, precision='float32'):
         """
         Translates a discovered kernel chain into a compliant ONNX file.
         """
@@ -52,6 +52,6 @@ class MetaKernel:
             if kernel:
                 kernel_chain.append((kernel, params))
 
-        compiler = ONNXCompiler(task_id)
+        compiler = ONNXCompiler(task_id, precision=precision)
         model = compiler.compile(kernel_chain, output_path)
         return model

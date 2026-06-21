@@ -22,10 +22,13 @@ class GravityKernel(BaseKernel):
                 new_grid[rows - len(non_zero):, c] = non_zero
         return new_grid
 
-    def to_onnx_nodes(self, input_name, output_name, direction='down', **kwargs):
+    def to_onnx_nodes(self, input_name, output_name, direction='down', precision='float32', **kwargs):
         nodes = []
         initializers = []
-        weights = np.zeros((10, 10, 3, 3), dtype=np.float32)
+        dtype = TensorProto.FLOAT if precision == 'float32' else TensorProto.FLOAT16
+        np_dtype = np.float32 if precision == 'float32' else np.float16
+
+        weights = np.zeros((10, 10, 3, 3), dtype=np_dtype)
         for color in range(1, 10):
             weights[color, color, 1, 1] = 1.0
             weights[color, 0, 2, 1] = -1.0
@@ -38,8 +41,8 @@ class GravityKernel(BaseKernel):
         # Clip inputs
         min_val_name = "clip_min"
         max_val_name = "clip_max"
-        initializers.append(numpy_helper.from_array(np.array(0.0, dtype=np.float32), name=min_val_name))
-        initializers.append(numpy_helper.from_array(np.array(1.0, dtype=np.float32), name=max_val_name))
+        initializers.append(numpy_helper.from_array(np.array(0.0, dtype=np_dtype), name=min_val_name))
+        initializers.append(numpy_helper.from_array(np.array(1.0, dtype=np_dtype), name=max_val_name))
 
         current_input = input_name
         for step in range(30):
